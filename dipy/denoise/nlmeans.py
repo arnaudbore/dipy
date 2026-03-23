@@ -139,8 +139,14 @@ def nlmeans(
                         f"shape {sigma.shape}"
                     )
         elif arr.ndim == 4:
-            if sigma.ndim != 1:
-                raise ValueError("sigma should be a 1D array for 4D data", sigma)
+            if sigma.ndim != 1 or sigma.ndim != 3:
+                raise ValueError("sigma should be a 1D array or a 3D volume for "
+                                 "4D data", sigma)
+            if sigma.ndim == 3 and sigma.shape != arr.shape[:-1]:
+                raise ValueError(
+                    "Sigma should be a 3D array "
+                    f"with shape {arr.shape[:-1]}, got shape {sigma.shape}"
+                )
             if sigma.shape[0] != arr.shape[-1]:
                 raise ValueError(
                     "sigma should have the same length as the last "
@@ -195,12 +201,16 @@ def nlmeans(
         denoised_arr = np.zeros_like(arr)
         for i in range(arr.shape[-1]):
             if method == "classic":
-                if isinstance(sigma, np.ndarray):
+                if isinstance(sigma, np.ndarray) and sigma.ndim == 3:
+                    sigma_vol = np.ones(arr.shape, dtype=np.float64) * sigma[..., np.newaxis]
+                elif isinstance(sigma, np.ndarray):
                     sigma_vol = np.full(arr[..., i].shape, sigma[i], dtype="f8")
                 else:
                     sigma_vol = np.full(arr[..., i].shape, sigma, dtype="f8")
             else:
-                if isinstance(sigma, np.ndarray):
+                if isinstance(sigma, np.ndarray) and sigma.ndim == 3:
+                    sigma_vol = np.ones(arr.shape, dtype=np.float64) * sigma[..., np.newaxis]
+                elif isinstance(sigma, np.ndarray):
                     sigma_vol = sigma[i]
                 else:
                     sigma_vol = sigma
